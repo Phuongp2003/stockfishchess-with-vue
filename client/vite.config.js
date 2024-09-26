@@ -21,4 +21,9 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
+  publicDir: 'public',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+  },
 })
