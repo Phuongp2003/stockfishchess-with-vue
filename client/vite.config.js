@@ -15,10 +15,22 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+    mimeTypes: {
+      'application/wasm': ['wasm'],
+    },
+  },
   devServer: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+    mimeTypes: {
+      'application/wasm': ['wasm'],
     },
   },
   publicDir: 'public',
