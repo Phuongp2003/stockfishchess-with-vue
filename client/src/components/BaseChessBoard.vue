@@ -1,6 +1,7 @@
 <style lang="scss" scoped>
 	.chessboard-wrap {
 		width: fit-content;
+		min-width: 100%;
 		height: fit-content;
 		position: relative;
 		.chessboard-overlay {
