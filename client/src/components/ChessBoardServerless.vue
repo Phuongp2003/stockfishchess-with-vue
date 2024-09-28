@@ -6,7 +6,6 @@
 
 <script>
 	import BaseChessBoard from '@/components/BaseChessBoard.vue';
-	import axios from 'axios';
 
 	export default {
 		components: {
@@ -27,9 +26,9 @@
 				const fen = this.$refs.baseChessBoard.boardAPI.getFen();
 				const isBlackTurn = fen.split(' ')[1] === 'b';
 				if (isBlackTurn) {
-					this.$refs.baseChessBoard.startWhiteTimer();
-				} else {
 					this.$refs.baseChessBoard.startBlackTimer();
+				} else {
+					this.$refs.baseChessBoard.startWhiteTimer();
 				}
 				if (moves) {
 					this.$refs.baseChessBoard.engine?.sendPosition(

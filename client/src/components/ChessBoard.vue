@@ -36,14 +36,15 @@
 						);
 
 						if (isBlackTurn) {
-							this.$refs.baseChessBoard.startWhiteTimer();
+							this.$refs.baseChessBoard.startBlackTimer();
+
 							// Send the moves to your server
 							const response = await axios.post(
 								'http://localhost:3000/move',
 								{
 									move: {
 										lan: moves[moves.length - 1],
-										after: fen, // Use getFen to get the current FEN string
+										after: fen,
 									},
 								}
 							);
@@ -57,7 +58,7 @@
 								});
 							}
 						} else {
-							this.$refs.baseChessBoard.startBlackTimer();
+							this.$refs.baseChessBoard.startWhiteTimer();
 						}
 					} catch (error) {
 						console.error('Error sending move to server:', error);

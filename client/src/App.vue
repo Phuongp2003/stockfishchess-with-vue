@@ -1,11 +1,17 @@
 <template>
 	<div id="app">
-		<h1>Chess Game {{ useServer ? 'with server' : 'without server' }}</h1>
-		<p
+		<h1 style="text-align: center">
+			{{ playerProfiles.player1.name }} VS
+			{{ playerProfiles.player2.name }}
+		</h1>
+
+		<div
 			v-if="errorMessage"
-			class="error">
-			{{ errorMessage }}
-		</p>
+			class="error-message">
+			<p class="error">
+				{{ errorMessage }}
+			</p>
+		</div>
 		<label>
 			<input
 				type="checkbox"
@@ -21,6 +27,7 @@
 	import Chessboard from '@/components/ChessBoard.vue';
 	import ChessboardServerless from '@/components/ChessBoardServerless.vue';
 	import axios from 'axios';
+	import { computed } from 'vue';
 
 	export default {
 		components: {
@@ -30,8 +37,27 @@
 		data() {
 			return {
 				useServer: true,
-				errorMessage: '', // To store error messages
+				errorMessage: '',
+				playerProfiles: {
+					player1: {
+						name: 'Demo Player',
+						avatar: '/favicon.ico',
+					},
+					player2: {
+						name: 'BOT Stockfish Dept 3',
+						avatar: '/images/stockfish-logo.png',
+					},
+				},
 			};
+		},
+		watch: {
+			errorMessage(newValue) {
+				if (newValue) {
+					setTimeout(() => {
+						this.errorMessage = '';
+					}, 10000);
+				}
+			},
 		},
 		mounted() {
 			this.checkServer();
@@ -64,6 +90,11 @@
 					this.errorMessage = ''; // Clear error message when switching to serverless mode
 				}
 			},
+		},
+		provide() {
+			return {
+				playerProfiles: computed(() => this.playerProfiles),
+			};
 		},
 	};
 </script>
