@@ -232,7 +232,7 @@
 			},
 
 			handleTimeoutOver() {
-				if (currentPlayer == 'white') {
+				if (this.currentPlayer == 'white') {
 					this.$refs.whiteTimer.resumeTimer();
 				} else {
 					this.$refs.blackTimer.resumeTimer();
