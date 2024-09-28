@@ -55,7 +55,7 @@
 				if (newValue) {
 					setTimeout(() => {
 						this.errorMessage = '';
-					}, 10000);
+					}, 5000);
 				}
 			},
 		},
@@ -101,7 +101,17 @@
 
 <style>
 	.error {
-		color: red;
+		color: white;
 		font-size: 20px;
+	}
+	.error-message {
+		position: absolute;
+		top: 10px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: max-content;
+		max-width: 100%;
+		background-color: rgba(0, 0, 0, 0.8);
+		border: red 2px solid;
 	}
 </style>
