@@ -176,7 +176,7 @@
 		props: {
 			handleMove: Function,
 		},
-		inject: ['playerProfiles'],
+		inject: ['playerProfiles', 'baseUrl'],
 		data() {
 			return {
 				engine: null,
@@ -217,7 +217,10 @@
 		methods: {
 			handleBoardCreated(boardApi) {
 				this.boardAPI = boardApi;
-				this.engine = new Engine(boardApi);
+				this.engine = new Engine(
+					boardApi,
+					this.baseUrl || window.location.origin
+				);
 			},
 			handleTimeUp(player) {
 				console.log(`${player} time is up!`);

@@ -2,12 +2,15 @@ const express = require('express');
 const { spawn } = require('child_process');
 const { Chess } = require('chess.js');
 const cors = require('cors');
+const dotenv = require('dotenv')
 
 const app = express();
-const port = 3000;
 
 app.use(express.json());
 app.use(cors());
+dotenv.config();
+
+const port = process.env.PORT;
 
 const path = require('path');
 /**
@@ -55,7 +58,7 @@ app.post('/move', (req, res) => {
         // Cập nhật FEN từ thông tin nước đi
         currentFen = move.after; // Cập nhật từ FEN sau khi di chuyển
         engine.stdin.write(`position fen ${currentFen}\n`);
-        engine.stdin.write('go movetime 10000\n');
+        engine.stdin.write('go dept 3\n');
 
         const onData = (data) => {
             const message = data.toString();

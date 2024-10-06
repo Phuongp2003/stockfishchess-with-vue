@@ -1,10 +1,10 @@
 export class Engine {
     stockfish; boardApi; bestMove;
-    engineName; constructor(boardApi) {
+    engineName; constructor(boardApi, baseUrl = "") {
         this.boardApi = boardApi; const
             wasmSupported = typeof WebAssembly === 'object' && WebAssembly.validate(
                 Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)); this.stockfish =
-                    new Worker(wasmSupported ? 'stockfish.wasm.js' : 'stockfish.js');
+                    new Worker(wasmSupported ? `${baseUrl}/stockfish.wasm.js` : `${baseUrl}/stockfish.js`);
         this.setupListeners(); this.stockfish.postMessage('uci');
     }
     setupListeners() {

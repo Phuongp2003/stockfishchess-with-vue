@@ -10,6 +10,23 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    lib: {
+      entry: fileURLToPath(new URL('./output.js', import.meta.url)),
+      name: 'Chess',
+      fileName: (format) => `index.${format}.js`
+    },
+    rollupOptions: {
+      external: ['vue'],
+      output: {
+        globals: {
+          vue: 'Vue'
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -34,8 +51,4 @@ export default defineConfig({
     },
   },
   publicDir: 'public',
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-  },
 })
