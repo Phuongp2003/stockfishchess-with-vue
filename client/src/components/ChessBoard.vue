@@ -13,6 +13,11 @@
 			BaseChessBoard,
 		},
 		extends: BaseChessBoard,
+		provide() {
+			return {
+				iPlayWithBot: false, //must have
+			};
+		},
 		methods: {
 			async handleMove() {
 				const history =
@@ -31,9 +36,6 @@
 						// Check if it's black's turn
 						const fen = this.$refs.baseChessBoard.boardAPI.getFen();
 						const isBlackTurn = fen.split(' ')[1] === 'b';
-						this.$refs.baseChessBoard.engine?.sendPosition(
-							moves.join(' ')
-						);
 
 						if (isBlackTurn) {
 							this.$refs.baseChessBoard.startBlackTimer();

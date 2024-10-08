@@ -1,16 +1,27 @@
 export class Engine {
-    stockfish; boardApi; bestMove;
-    engineName; constructor(boardApi, baseUrl = "") {
+    stockfish; boardApi; bestMove; level; currentPlayer; isPlayWithBot; isStarted = false;
+    engineName; constructor(boardApi, baseUrl = "", level = 1, currentPlayer = 'white', isPlayWithBot = true) {
         this.boardApi = boardApi; const
             wasmSupported = typeof WebAssembly === 'object' && WebAssembly.validate(
                 Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)); this.stockfish =
                     new Worker(wasmSupported ? `${baseUrl}/stockfish.wasm.js` : `${baseUrl}/stockfish.js`);
         this.setupListeners(); this.stockfish.postMessage('uci');
+        this.level = level;
+        this.currentPlayer = currentPlayer;
+        this.isPlayWithBot = isPlayWithBot;
     }
     setupListeners() {
         this.stockfish.addEventListener('message', (data) => this.handleEngineStdout(data));
         this.stockfish.addEventListener('error', (err) => console.error(err));
         this.stockfish.addEventListener('messageerror', (err) => console.error(err));
+    }
+    startGame() {
+        this.isStarted = true;
+        if (this.isPlayWithBot && this.currentPlayer !== 'white')
+            this.boardApi.move({
+                from: this.bestMove.slice(0, 2),
+                to: this.bestMove.slice(2, 4),
+            });
     }
     handleEngineStdout(data) {
         const uciStringSplitted = (data.data).split(' ');
@@ -23,7 +34,7 @@ export class Engine {
         }
 
         if (uciStringSplitted[0] === 'readyok') {
-            this.stockfish.postMessage('go movetime 1200');
+            this.stockfish.postMessage('go movetime' + 12 * this.level);
             return;
         }
 
@@ -31,7 +42,7 @@ export class Engine {
             if
                 (uciStringSplitted[1] !== this.bestMove) {
                 this.bestMove = uciStringSplitted[1];
-                if (this.boardApi.getTurnColor() === 'black') {
+                if (this.isStarted && this.isPlayWithBot && this.boardApi.getTurnColor() === (this.currentPlayer === 'white' ? 'black' : 'white')) {
                     this.boardApi.move({
                         from: this.bestMove.slice(0, 2),
                         to: this.bestMove.slice(2, 4),
@@ -43,9 +54,10 @@ export class Engine {
     setOption(name, value) {
         this.stockfish.postMessage(`setoption name ${name} value ${value}`);
     }
+
     sendPosition(position) {
         this.stockfish.postMessage(`position startpos moves ${position}`);
-        const moveTime = this.boardApi.getTurnColor() === 'black' ? 7500 : 1200;
-        this.stockfish.postMessage(`go movetime ${moveTime}`);
+        const moveLV = this.boardApi.getTurnColor() !== this.currentPlayer ? this.level : 1;
+        this.stockfish.postMessage(`go dept ${moveLV}`);
     }
 }

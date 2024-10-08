@@ -84,7 +84,7 @@
 			<div
 				id="player2-profile"
 				class="pprofile"
-				:class="currentPlayer === 'black' ? 'in-move' : ''">
+				:class="setupPlayer === 'black' ? 'in-move' : ''">
 				<div class="profile">
 					<div class="avatar">
 						<img :src="playerProfiles.player2.avatar" />
@@ -98,7 +98,7 @@
 			<div
 				id="player1-profile"
 				class="pprofile"
-				:class="currentPlayer === 'white' ? 'in-move' : ''">
+				:class="setupPlayer === 'white' ? 'in-move' : ''">
 				<div class="profile">
 					<div class="avatar">
 						<img :src="playerProfiles.player1.avatar" />
@@ -115,19 +115,31 @@
 			<div class="chessboard-wrap">
 				<TheChessboard
 					ref="chessboard"
+					@stalemate="handleStalemate"
 					@board-created="handleBoardCreated"
 					@move="handleMove"
+					@checkmate="handleCheckmate"
+					@draw="handleDraw"
+					@check="handleCheck"
+					@promotion="handlePromotion"
 					:board-config="boardConfig"
-					:player-color="'white'" />
+					:player-color="setupPlayer"
+					:orientation="setupPlayer" />
 				<div
 					class="chessboard-overlay"
-					:style="`display: ${inTimeout ? 'block' : 'none'}`">
+					:style="`display: ${inTimePause ? 'block' : 'none'}`">
 					<div class="text">
-						{{ currentPlayer }} call timeout
+						{{ !end ? `${currentPlayer} call timeout` : message }}
 						<Timer
 							ref="timeoutTimer"
+							v-if="!end"
 							:initialTime="60"
 							@time-up="handleTimeoutOver()" />
+						<button
+							@click="startGame()"
+							v-if="!isFirstMoveDone">
+							Start game
+						</button>
 					</div>
 				</div>
 			</div>
@@ -137,12 +149,12 @@
 			to="#player1-profile"
 			defer>
 			<Timer
-				ref="whiteTimer"
+				:ref="setupPlayer === 'white' ? 'whiteTimer' : 'blackTimer'"
 				:initialTime="600"
-				@time-up="handleTimeUp('white')" />
+				@time-up="handleTimeUp(setupPlayer)" />
 			<button
-				@click="callTimeout(currentPlayer)"
-				v-if="currentPlayer == 'white'">
+				@click="callTimeout(setupPlayer)"
+				v-if="currentPlayer === setupPlayer">
 				Call Timeout
 			</button>
 			<label>
@@ -156,9 +168,11 @@
 			to="#player2-profile"
 			defer>
 			<Timer
-				ref="blackTimer"
+				:ref="setupPlayer === 'black' ? 'whiteTimer' : 'blackTimer'"
 				:initialTime="600"
-				@time-up="handleTimeUp('black')" />
+				@time-up="
+					handleTimeUp(currentPlayer === 'white' ? 'black' : 'white')
+				" />
 		</teleport>
 	</div>
 </template>
@@ -176,15 +190,19 @@
 		props: {
 			handleMove: Function,
 		},
-		inject: ['playerProfiles', 'baseUrl'],
+		inject: ['playerProfiles', 'baseUrl', 'isetupPlayer', 'iPlayWithBot'],
 		data() {
 			return {
+				isFirstMoveDone: false,
 				engine: null,
 				showSupportLine: false,
-				inTimeout: false,
+				inTimePause: true,
 				currentPlayer: 'white',
+				setupPlayer: this.isetupPlayer || 'white',
 				boardAPI: null,
 				boardConfig: {},
+				end: true,
+				message: 'Wait for start',
 			};
 		},
 		created() {
@@ -193,7 +211,7 @@
 					select: async () => {
 						if (
 							this.engine?.bestMove &&
-							this.currentPlayer === 'white' &&
+							this.currentPlayer === this.setupPlayer &&
 							this.showSupportLine
 						) {
 							this.boardAPI?.drawMove(
@@ -212,6 +230,7 @@
 				disableContextMenu: false,
 				addPieceZIndex: true,
 				blockTouchScroll: true,
+				orientation: this.setupPlayer,
 			};
 		},
 		methods: {
@@ -219,18 +238,23 @@
 				this.boardAPI = boardApi;
 				this.engine = new Engine(
 					boardApi,
-					this.baseUrl || window.location.origin
+					this.baseUrl || window.location.origin,
+					1,
+					this.setupPlayer,
+					this.iPlayWithBot
 				);
 			},
 			handleTimeUp(player) {
-				console.log(`${player} time is up!`);
+				this.message = `${player} time is up!`;
+				this.end = true;
+				this.inTimePause = true;
 			},
 
 			callTimeout(player) {
 				this.$refs.whiteTimer.pauseTimer();
 				this.$refs.blackTimer.pauseTimer();
 				this.$refs.timeoutTimer.startTimer();
-				this.inTimeout = true;
+				this.inTimePause = true;
 				this.boardConfig.viewOnly = true;
 			},
 
@@ -240,7 +264,7 @@
 				} else {
 					this.$refs.blackTimer.resumeTimer();
 				}
-				this.inTimeout = false;
+				this.inTimePause = false;
 				this.boardConfig.viewOnly = false;
 			},
 
@@ -254,6 +278,34 @@
 				this.currentPlayer = 'white';
 				this.$refs.whiteTimer.resumeTimer();
 				this.$refs.blackTimer.pauseTimer();
+			},
+
+			handleStalemate() {
+				this.message = 'Stalemate! The game is a draw.';
+				this.end = true;
+				this.inTimePause = true;
+			},
+			handleCheckmate({ winner, loser }) {
+				this.message = `Checkmate! ${winner} wins against ${loser}.`;
+				this.end = true;
+				this.inTimePause = true;
+			},
+			handleDraw() {
+				this.message = 'Draw! The game is a draw.';
+				this.end = true;
+				this.inTimePause = true;
+			},
+			handleCheck({ playerInCheck }) {
+				this.message = `Check! ${playerInCheck} is in check.`;
+			},
+			handlePromotion({ player, from, to, promotionPiece }) {
+				this.message = `${player} promoted a pawn from ${from} to ${to} to a ${promotionPiece}.`;
+			},
+			startGame() {
+				this.engine.startGame();
+				this.inTimePause = false;
+				this.end = false;
+				this.message = '';
 			},
 		},
 	};

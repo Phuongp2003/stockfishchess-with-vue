@@ -1,5 +1,5 @@
 <template>
-	<div id="app">
+	<div id="tsk-chess">
 		<h1 style="text-align: center">
 			{{ playerProfiles.player1.name }} VS
 			{{ playerProfiles.player2.name }}
@@ -19,7 +19,25 @@
 				@change="handleUseServerChange" />
 			Use Server
 		</label>
-		<component :is="useServer ? 'Chessboard' : 'ChessboardServerless'" />
+		<component
+			:is="useServer ? 'Chessboard' : 'ChessboardServerless'"
+			v-if="currentPlayer" />
+		<div
+			class="choose-player"
+			v-if="!currentPlayer">
+			<label for="player-select">Choose Player:</label>
+			<select
+				id="player-select"
+				v-model="currentPlayer">
+				<option
+					disabled
+					value="">
+					Please select one
+				</option>
+				<option value="white">White</option>
+				<option value="black">Black</option>
+			</select>
+		</div>
 	</div>
 </template>
 
@@ -48,6 +66,7 @@
 						avatar: '/images/stockfish-logo.png',
 					},
 				},
+				currentPlayer: '',
 			};
 		},
 		watch: {
@@ -94,6 +113,8 @@
 		provide() {
 			return {
 				playerProfiles: computed(() => this.playerProfiles),
+				isetupPlayer: computed(() => this.currentPlayer),
+				iPlayWithBot: true,
 			};
 		},
 	};
