@@ -1,7 +1,7 @@
 {
   "name": "tsk-chess",
-  "version": "0.7.9",
-  "author": "phuongp2003",
+  "version": "0.8.0",
+  "author": "Phuongp2003",
   "license": "MIT",
   "private": false,
   "main": "./dist/index.umd.js",
