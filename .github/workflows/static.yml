@@ -23,7 +23,7 @@ jobs:
               working-directory: ./client
 
             - name: Build Application
-              run: npm run build
+              run: npm run build:package
               working-directory: ./client
 
             - name: List directory contents
