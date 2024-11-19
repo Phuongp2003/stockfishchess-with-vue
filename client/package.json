@@ -1,6 +1,6 @@
 {
   "name": "tsk-chess",
-  "version": "0.8.0",
+  "version": "0.8.3",
   "author": "Phuongp2003",
   "license": "MIT",
   "private": false,
@@ -30,6 +30,8 @@
     "axios": "^1.7.7",
     "rollup-plugin-css-only": "^4.5.2",
     "rollup-plugin-scss": "^4.0.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "tsk-chess": "file:",
     "vue": "^3.4.29",
     "vue-router": "^4.0.13",

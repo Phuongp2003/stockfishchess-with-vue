@@ -1,7 +1,8 @@
 <template>
 	<BaseChessBoard
 		ref="baseChessBoard"
-		:handleMove="handleMove" />
+		:handleMove="handleMove"
+		:startGame="startGame" />
 </template>
 
 <script>
@@ -35,6 +36,12 @@
 						moves.join(' ')
 					);
 				}
+			},
+			startGame() {
+				this.$refs.baseChessBoard.engine.startGame();
+				this.$refs.baseChessBoard.inTimePause = false;
+				this.$refs.baseChessBoard.end = false;
+				this.$refs.baseChessBoard.message = '';
 			},
 		},
 	};

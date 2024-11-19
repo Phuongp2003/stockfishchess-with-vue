@@ -189,6 +189,7 @@
 		},
 		props: {
 			handleMove: Function,
+			startGame: Function,
 		},
 		inject: ['playerProfiles', 'baseUrl', 'isetupPlayer', 'iPlayWithBot'],
 		data() {
@@ -300,12 +301,6 @@
 			},
 			handlePromotion({ player, from, to, promotionPiece }) {
 				this.message = `${player} promoted a pawn from ${from} to ${to} to a ${promotionPiece}.`;
-			},
-			startGame() {
-				this.engine.startGame();
-				this.inTimePause = false;
-				this.end = false;
-				this.message = '';
 			},
 		},
 	};

@@ -16,6 +16,8 @@
     "dotenv": "^16.4.5",
     "dotnet": "^1.1.4",
     "express": "^4.21.1",
+    "mysql2": "^3.11.4",
+    "socket.io": "^4.8.1",
     "stockfish": "^16.0.0",
     "stockfish-bot": "file:"
   }
