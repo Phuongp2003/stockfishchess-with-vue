@@ -27,7 +27,6 @@
 
 				const moves = history?.map((move) => {
 					if (typeof move === 'object') {
-						console.log('🚀 ~ moves ~ move.lan:', move.lan);
 						return move.lan;
 					} else {
 						return move;
@@ -52,7 +51,7 @@
 					try {
 						// Send the moves to your server
 						const response = await axios.post(
-							'http://localhost:3000/move',
+							'http://localhost:3000/api/pve/move',
 							{
 								move: {
 									lan: moves[moves.length - 1],
@@ -76,7 +75,7 @@
 			async startGame() {
 				if (this.isetupPlayer === 'black') {
 					const response = await axios.post(
-						'http://localhost:3000/move',
+						'http://localhost:3000/api/pve/move',
 						{
 							move: {
 								lan: '',

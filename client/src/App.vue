@@ -69,7 +69,8 @@
 	import ChessboardPVP from '@/components/PVPBoard.vue';
 	import ChessboardServerless from '@/components/ChessBoardServerless.vue';
 	import axios from 'axios';
-	import { computed } from 'vue';
+	import { useCookies } from '@vueuse/integrations/useCookies';
+	import { computed, ref } from 'vue';
 	import io from 'socket.io-client';
 
 	export default {
@@ -93,13 +94,17 @@
 						avatar: '/images/stockfish-logo.png',
 					},
 				},
-				currentPlayer: '',
+				currentPlayer: null,
 				roomId: '',
-				playerId: '',
+				playerId: this.cookies.get('user').uid,
 				roomJoined: false,
 				socket: null,
 				socketStatus: 'Disconnected',
 			};
+		},
+		setup() {
+			const cookies = useCookies();
+			return { cookies };
 		},
 		watch: {
 			errorMessage(newValue) {
@@ -116,6 +121,11 @@
 					this.disconnectSocket();
 				}
 			},
+			currentPlayer(newValue) {
+				if (newValue) {
+					console.log(newValue); // Clear any previous error messages
+				}
+			},
 		},
 		mounted() {
 			this.checkServer();
@@ -123,7 +133,7 @@
 		methods: {
 			async checkServer() {
 				try {
-					await axios.post('http://localhost:3000/start');
+					await axios.post('http://localhost:3000/api/pve/start');
 					this.useServer = true;
 					this.errorMessage = ''; // Clear any previous error messages
 				} catch (error) {
@@ -136,7 +146,7 @@
 			async handleUseServerChange() {
 				if (this.useServer) {
 					try {
-						await axios.post('http://localhost:3000/start');
+						await axios.post('http://localhost:3000/api/pve/start');
 						this.errorMessage = ''; // Clear any previous error messages
 					} catch (error) {
 						console.error('Server is not available:', error);
@@ -155,7 +165,6 @@
 				});
 				this.socket.on('connect', () => {
 					this.socketStatus = 'Connected';
-					this.playerId = this.socket.id;
 					console.log('Socket connected:', this.socket.id);
 				});
 				this.socket.on('disconnect', () => {
@@ -164,12 +173,6 @@
 				});
 				this.socket.on('join_success', (data) => {
 					this.roomJoined = true;
-					this.currentPlayer = data.gameState.player_a
-						? 'black'
-						: 'white';
-					if (data.gameState.player_b) {
-						this.currentPlayer = 'white';
-					}
 					console.log('Join success:', data);
 				});
 				this.socket.on('room_created', ({ gameId, playerId }) => {
@@ -182,9 +185,10 @@
 					}
 				});
 				this.socket.on('color_chosen', (data) => {
+					console.log('🚀 ~ this.socket.on ~ data:', data);
 					this.roomJoined = true;
 					this.currentPlayer =
-						data.gameState.player_a === this.socket.id
+						data.gameState.white_player === this.playerId
 							? 'white'
 							: 'black';
 					console.log('Color chosen:', data);
@@ -203,21 +207,15 @@
 				}
 			},
 			createRoom() {
-				this.socket.emit('create_room', { playerId: this.socket.id });
+				this.socket.emit('create_room', { playerId: this.playerId });
 			},
 			joinRoom() {
 				this.socket.emit('join_game', {
 					gameId: this.roomId,
-					playerId: this.socket.id,
+					playerId: this.playerId,
 				});
 				this.socket.on('join_success', (data) => {
 					this.roomJoined = true;
-					this.currentPlayer = data.gameState.player_a
-						? 'black'
-						: 'white';
-					if (data.gameState.player_b) {
-						this.currentPlayer = 'white';
-					}
 					console.log('Join success:', data);
 				});
 			},
@@ -227,7 +225,7 @@
 					: 'black';
 				this.socket.emit('choose_color', {
 					gameId: this.roomId,
-					playerId: this.socket.id,
+					playerId: this.playerId,
 					color,
 				});
 			},
@@ -239,7 +237,7 @@
 				iPlayWithBot: true,
 				matchId: computed(() => this.roomId),
 				playerColor: computed(() => this.currentPlayer),
-				errorMessage: computed(() => this.errorMessage)
+				errorMessage: ref(() => this.errorMessage),
 			};
 		},
 	};

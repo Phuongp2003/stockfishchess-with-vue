@@ -8,7 +8,6 @@
 <script>
 	import BaseChessBoard from '@/components/BaseChessBoard.vue';
 	import axios from 'axios';
-	import io from 'socket.io-client';
 
 	export default {
 		components: {
@@ -36,10 +35,11 @@
 				type: Object,
 			},
 		},
-		inject: ['isetupPlayer','errorMessage'],
+		inject: ['isetupPlayer', 'errorMessage'],
 		data() {
 			return {
 				localMatchId: this.matchId,
+				isTimeChange: false,
 			};
 		},
 		methods: {
@@ -49,7 +49,7 @@
 				const move = { source, target };
 				try {
 					const response = await axios.post(
-						'http://localhost:3000/api/game/move',
+						'http://localhost:3000/api/pvp/move',
 						{
 							matchId: this.matchId,
 							playerId: this.playerID,
@@ -71,14 +71,18 @@
 			async startGame() {
 				if (this.playerColor === 'white') {
 					try {
-						const response = await axios.post(
-							'http://localhost:3000/api/game/start',
-							{
+						await axios
+							.post('http://localhost:3000/api/pvp/start', {
 								gameId: this.matchId,
 								playerId: this.playerID,
 								playerColor: this.playerColor,
-							}
-						);
+							})
+							.then((response) => {
+								console.log(
+									'🚀 ~ .then ~ response.data:',
+									response.data
+								);
+							});
 					} catch (error) {
 						console.error('Error starting game:', error);
 					}
@@ -91,6 +95,15 @@
 						from: data.move.source.from,
 						to: data.move.source.to,
 					});
+					if (!this.isTimeChange) {
+						const isBlackTurn = data.move.source.color === 'b';
+						if (isBlackTurn) {
+							this.$refs.baseChessBoard.startWhiteTimer();
+						} else {
+							this.$refs.baseChessBoard.startBlackTimer();
+						}
+					}
+					this.isTimeChange = !this.isTimeChange;
 				}
 				if (data.message) {
 					this.errorMessage = data.message;
@@ -117,10 +130,6 @@
 				this.updateGame(data);
 			});
 			this.socket.on('game_started', (data) => {
-				console.log(
-					'🚀 ~ this.socket.on ~ game_started:',
-					'game_started'
-				);
 				this.$refs.baseChessBoard.inTimePause = false;
 				this.$refs.baseChessBoard.end = false;
 				this.$refs.baseChessBoard.message = '';
