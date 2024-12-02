@@ -1,6 +1,6 @@
 export class Engine {
-    stockfish; boardApi; bestMove; level; currentPlayer; isPlayWithBot; isStarted = false;
-    engineName; constructor(boardApi, baseUrl = "", level = 1, currentPlayer = 'white', isPlayWithBot = true) {
+    stockfish; boardApi; bestMove; level; currentPlayer; isPlayWithBot; isStarted = false; setupPlayer = 'white'; iTrainingMode = false;
+    engineName; constructor(boardApi, baseUrl = "", level = 1, currentPlayer = 'white', isPlayWithBot = true, setupPlayer = 'white', iTrainingMode = false) {
         this.boardApi = boardApi; const
             wasmSupported = typeof WebAssembly === 'object' && WebAssembly.validate(
                 Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)); this.stockfish =
@@ -9,6 +9,8 @@ export class Engine {
         this.level = level;
         this.currentPlayer = currentPlayer;
         this.isPlayWithBot = isPlayWithBot;
+        this.setupPlayer = setupPlayer;
+        this.iTrainingMode = iTrainingMode
     }
     setupListeners() {
         this.stockfish.addEventListener('message', (data) => this.handleEngineStdout(data));
@@ -17,7 +19,7 @@ export class Engine {
     }
     startGame() {
         this.isStarted = true;
-        if (this.isPlayWithBot && this.currentPlayer !== 'white')
+        if (this.isPlayWithBot && this.currentPlayer !== this.setupPlayer)
             this.boardApi.move({
                 from: this.bestMove.slice(0, 2),
                 to: this.bestMove.slice(2, 4),

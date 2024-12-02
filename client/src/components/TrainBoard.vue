@@ -44,15 +44,6 @@
 				});
 
 				const fen = this.$refs.baseChessBoard.boardAPI.getFen();
-				const isBlackTurn = fen.split(' ')[1] === 'b';
-
-				if (moves) {
-					if (isBlackTurn) {
-						this.$refs.baseChessBoard.startBlackTimer();
-					} else {
-						this.$refs.baseChessBoard.startWhiteTimer();
-					}
-				}
 
 				if (
 					this.isetupPlayer.charAt(0) !== fen.split(' ')[1] &&
@@ -61,12 +52,15 @@
 					try {
 						// Send the moves to your server
 						const response = await axios.post(
-							'http://localhost:3000/api/pve/move',
+							'http://localhost:3000/api/train/move',
 							{
 								move: {
 									lan: moves[moves.length - 1],
 									after: fen,
 								},
+								fen,
+								elo: 10,
+								coachEloMultiple: 1.2,
 							}
 						);
 
@@ -82,32 +76,7 @@
 						console.error('Error sending move to server:', error);
 					}
 			},
-			async startGame() {
-				if (this.isetupPlayer === 'black') {
-					const response = await axios.post(
-						'http://localhost:3000/api/pve/move',
-						{
-							move: {
-								lan: '',
-								after: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-							},
-						}
-					);
-
-					// Handle the response from the server
-					const bestMove = response.data.bestMove;
-					if (bestMove) {
-						this.$refs.baseChessBoard.boardAPI.move({
-							from: bestMove.slice(0, 2),
-							to: bestMove.slice(2, 4),
-						});
-					}
-				}
-
-				this.$refs.baseChessBoard.inTimePause = false;
-				this.$refs.baseChessBoard.end = false;
-				this.$refs.baseChessBoard.message = '';
-			},
+			async startGame() {},
 		},
 	};
 </script>

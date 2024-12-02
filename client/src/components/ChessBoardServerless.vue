@@ -13,6 +13,11 @@
 			BaseChessBoard,
 		},
 		extends: BaseChessBoard,
+		data() {
+			return {
+				boardAPI: null,
+			};
+		},
 		methods: {
 			handleMove() {
 				const history =

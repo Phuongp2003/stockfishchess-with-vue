@@ -113,6 +113,7 @@
 			to="#game-field"
 			defer>
 			<div class="chessboard-wrap">
+				{{ iTrainingMode }}
 				<TheChessboard
 					ref="chessboard"
 					@stalemate="handleStalemate"
@@ -123,21 +124,14 @@
 					@check="handleCheck"
 					@promotion="handlePromotion"
 					:board-config="boardConfig"
-					:player-color="setupPlayer"
-					:orientation="setupPlayer" />
+					:player-color="iTrainingMode ? null : setupPlayer" />
 				<div
 					class="chessboard-overlay"
-					:style="`display: ${inTimePause ? 'block' : 'none'}`">
+					:style="`display: ${end ? 'block' : 'none'}`">
 					<div class="text">
-						{{ !end ? `${currentPlayer} call timeout` : message }}
-						<Timer
-							ref="timeoutTimer"
-							v-if="!end"
-							:initialTime="60"
-							@time-up="handleTimeoutOver()" />
 						<button
 							@click="startGame()"
-							v-if="!isFirstMoveDone">
+							v-if="!isFirstMoveDone && !end">
 							Start game
 						</button>
 					</div>
@@ -150,13 +144,12 @@
 			defer>
 			<Timer
 				:ref="setupPlayer === 'white' ? 'whiteTimer' : 'blackTimer'"
-				:initialTime="600"
-				@time-up="handleTimeUp(setupPlayer)" />
-			<button
-				@click="callTimeout(setupPlayer)"
-				v-if="currentPlayer === setupPlayer">
-				Call Timeout
-			</button>
+				:initialTime="
+					playerProfiles.player1.timeless
+						? playerProfiles.player1.timeless
+						: 600
+				"
+				@time-up="handleTimeUp(playerProfiles.player1.name)" />
 			<label>
 				<input
 					type="checkbox"
@@ -169,10 +162,12 @@
 			defer>
 			<Timer
 				:ref="setupPlayer === 'black' ? 'whiteTimer' : 'blackTimer'"
-				:initialTime="600"
-				@time-up="
-					handleTimeUp(currentPlayer === 'white' ? 'black' : 'white')
-				" />
+				:initialTime="
+					playerProfiles.player2.timeless
+						? playerProfiles.player2.timeless
+						: 600
+				"
+				@time-up="handleTimeUp(playerProfiles.player2.name)" />
 		</teleport>
 	</div>
 </template>
@@ -191,7 +186,14 @@
 			handleMove: Function,
 			startGame: Function,
 		},
-		inject: ['playerProfiles', 'baseUrl', 'isetupPlayer', 'iPlayWithBot'],
+		inject: [
+			'playerProfiles',
+			'baseUrl',
+			'isetupPlayer',
+			'iPlayWithBot',
+			'startupFen',
+			'iTrainingMode',
+		],
 		data() {
 			return {
 				isFirstMoveDone: false,
@@ -202,8 +204,11 @@
 				setupPlayer: this.isetupPlayer || 'white',
 				boardAPI: null,
 				boardConfig: {},
-				end: true,
+				end: false,
 				message: 'Wait for start',
+				fen:
+					this.startupFen ||
+					'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
 			};
 		},
 		created() {
@@ -232,6 +237,8 @@
 				addPieceZIndex: true,
 				blockTouchScroll: true,
 				orientation: this.setupPlayer,
+				fen: this.fen,
+				coordinates: false,
 			};
 		},
 		methods: {
@@ -242,39 +249,30 @@
 					this.baseUrl || window.location.origin,
 					1,
 					this.setupPlayer,
-					this.iPlayWithBot
+					this.iPlayWithBot,
+					this.setupPlayer,
+					this.iTrainingMode
 				);
+				this.$emit('board-created', boardApi);
 			},
 			handleTimeUp(player) {
-				this.message = `${player} time is up!`;
+				this.message = `${
+					player === this.playerProfiles.player1.name
+						? player
+						: this.playerProfiles.player2.name
+				} đã hết giờ! ${
+					player !== this.playerProfiles.player1.name
+						? player
+						: this.playerProfiles.player2.name
+				} giành chiến thắng!`;
 				this.end = true;
 				this.inTimePause = true;
 			},
-
-			callTimeout(player) {
-				this.$refs.whiteTimer.pauseTimer();
-				this.$refs.blackTimer.pauseTimer();
-				this.$refs.timeoutTimer.startTimer();
-				this.inTimePause = true;
-				this.boardConfig.viewOnly = true;
-			},
-
-			handleTimeoutOver() {
-				if (this.currentPlayer == 'white') {
-					this.$refs.whiteTimer.resumeTimer();
-				} else {
-					this.$refs.blackTimer.resumeTimer();
-				}
-				this.inTimePause = false;
-				this.boardConfig.viewOnly = false;
-			},
-
 			startBlackTimer() {
 				this.currentPlayer = 'black';
 				this.$refs.blackTimer.resumeTimer();
 				this.$refs.whiteTimer.pauseTimer();
 			},
-
 			startWhiteTimer() {
 				this.currentPlayer = 'white';
 				this.$refs.whiteTimer.resumeTimer();
@@ -282,17 +280,17 @@
 			},
 
 			handleStalemate() {
-				this.message = 'Stalemate! The game is a draw.';
+				this.message = 'Hết nước! Game đấu hoà.';
 				this.end = true;
 				this.inTimePause = true;
 			},
 			handleCheckmate({ winner, loser }) {
-				this.message = `Checkmate! ${winner} wins against ${loser}.`;
+				this.message = `Chiếu hết! ${winner} giành thắng lợi trước ${loser}.`;
 				this.end = true;
 				this.inTimePause = true;
 			},
 			handleDraw() {
-				this.message = 'Draw! The game is a draw.';
+				this.message = 'Game đấu hoà!';
 				this.end = true;
 				this.inTimePause = true;
 			},
@@ -301,6 +299,20 @@
 			},
 			handlePromotion({ player, from, to, promotionPiece }) {
 				this.message = `${player} promoted a pawn from ${from} to ${to} to a ${promotionPiece}.`;
+			},
+			setTime(clockRef, timeless) {
+				const clock =
+					clockRef === 'white'
+						? this.$refs.whiteTimer
+						: this.$refs.blackTimer;
+				clock.setTime(timeless);
+			},
+			getTime(clockRef) {
+				const clock =
+					clockRef === 'white'
+						? this.$refs.whiteTimer
+						: this.$refs.blackTimer;
+				return clock.getTime();
 			},
 		},
 	};

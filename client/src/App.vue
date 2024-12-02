@@ -1,3 +1,41 @@
+<style>
+	.error {
+		color: white;
+		font-size: 20px;
+	}
+	.error-message {
+		position: absolute;
+		top: 10px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: max-content;
+		max-width: 100%;
+		background-color: rgba(0, 0, 0, 0.8);
+		border: red 2px solid;
+	}
+	.connection-status {
+		margin-top: 10px;
+		font-weight: bold;
+	}
+
+	.d-flex {
+		display: flex;
+	}
+
+	.flex-col {
+		flex-direction: column;
+	}
+	.flex-row {
+		flex-direction: row;
+	}
+
+	.main-chessboard-wrap {
+		width: max-content;
+		margin: 0 auto;
+		gap: 20px;
+	}
+</style>
+
 <template>
 	<div id="tsk-chess">
 		<h1 style="text-align: center">
@@ -22,6 +60,12 @@
 				v-model="isPvPMode" />
 			PvP Mode
 		</label>
+		<label>
+			<input
+				type="checkbox"
+				v-model="trainingMode" />
+			Training mode
+		</label>
 		<div v-if="isPvPMode">
 			<button @click="createRoom">Create Room</button>
 			<input
@@ -31,19 +75,31 @@
 			<div v-if="roomId">Room ID: {{ roomId }}</div>
 			<div v-if="playerId">Player ID: {{ playerId }}</div>
 		</div>
-		<component
-			:is="
-				useServer
-					? isPvPMode
-						? 'ChessboardPVP'
-						: 'Chessboard'
-					: 'ChessboardServerless'
-			"
-			v-if="currentPlayer && (!isPvPMode || roomJoined)"
-			:matchId="roomId"
-			:playerID="playerId"
-			:playerColor="currentPlayer"
-			:socket="socket" />
+		<div
+			class="main-chessboard-wrap d-flex flex-row"
+			v-if="currentPlayer && (!isPvPMode || roomJoined)">
+			<component
+				:is="
+					trainingMode && useServer
+						? 'TrainBoard'
+						: useServer
+						? isPvPMode
+							? 'ChessboardPVP'
+							: 'Chessboard'
+						: 'ChessboardServerless'
+				"
+				ref="chessboardwrap"
+				@board-created="createdBoard"
+				:matchId="roomId"
+				:playerID="playerId"
+				:playerColor="currentPlayer"
+				:socket="socket" />
+			<GameControl
+				:boardAPI="boardAPI"
+				:trainingStart="trainingStart"
+				v-if="boardAPI && trainingMode" />
+		</div>
+
 		<div
 			class="choose-player"
 			v-if="!currentPlayer">
@@ -66,8 +122,10 @@
 
 <script>
 	import Chessboard from '@/components/ChessBoard.vue';
+	import TrainBoard from '@/components/TrainBoard.vue';
 	import ChessboardPVP from '@/components/PVPBoard.vue';
 	import ChessboardServerless from '@/components/ChessBoardServerless.vue';
+	import GameControl from './components/GameControl.vue';
 	import axios from 'axios';
 	import { useCookies } from '@vueuse/integrations/useCookies';
 	import { computed, ref } from 'vue';
@@ -78,6 +136,8 @@
 			Chessboard,
 			ChessboardServerless,
 			ChessboardPVP,
+			GameControl,
+			TrainBoard,
 		},
 		data() {
 			return {
@@ -98,8 +158,12 @@
 				roomId: '',
 				playerId: this.cookies.get('user').uid,
 				roomJoined: false,
+				trainingMode: false,
 				socket: null,
 				socketStatus: 'Disconnected',
+				boardAPI: null,
+				startupFen:
+					'r2qkb1r/ppp2ppp/2n2n2/3pp3/4P1B1/3P1P1N/PPP3PP/RNB1K2R b KQkq - 0 7',
 			};
 		},
 		setup() {
@@ -131,6 +195,9 @@
 			this.checkServer();
 		},
 		methods: {
+			createdBoard(boardApi) {
+				this.boardAPI = boardApi;
+			},
 			async checkServer() {
 				try {
 					await axios.post('http://localhost:3000/api/pve/start');
@@ -185,7 +252,6 @@
 					}
 				});
 				this.socket.on('color_chosen', (data) => {
-					console.log('🚀 ~ this.socket.on ~ data:', data);
 					this.roomJoined = true;
 					this.currentPlayer =
 						data.gameState.white_player === this.playerId
@@ -229,37 +295,47 @@
 					color,
 				});
 			},
+			async trainingStart() {
+				try {
+					const response = await axios.post(
+						'http://localhost:3000/api/train/start',
+						{
+							fen: this.$refs.chessboardwrap.boardAPI.getFen(),
+							role:
+								this.currentPlayer === 'white'
+									? 'black'
+									: 'white',
+							elo: 10,
+							coachEloMultiple: 1.2,
+						}
+					);
+					const bestMove = response.data.bestMove;
+					if (bestMove) {
+						this.$refs.chessboardwrap.boardAPI.move({
+							from: bestMove.slice(0, 2),
+							to: bestMove.slice(2, 4),
+						});
+					}
+					this.errorMessage = '';
+				} catch (error) {
+					console.error('Server is not available:', error);
+					this.useServer = false;
+					this.errorMessage =
+						'Server is not available. Using serverless mode.';
+				}
+			},
 		},
 		provide() {
 			return {
 				playerProfiles: computed(() => this.playerProfiles),
 				isetupPlayer: computed(() => this.currentPlayer),
 				iPlayWithBot: true,
+				iTrainingMode: computed(() => this.trainingMode),
 				matchId: computed(() => this.roomId),
 				playerColor: computed(() => this.currentPlayer),
 				errorMessage: ref(() => this.errorMessage),
+				startupFen: ref(this.startupFen),
 			};
 		},
 	};
 </script>
-
-<style>
-	.error {
-		color: white;
-		font-size: 20px;
-	}
-	.error-message {
-		position: absolute;
-		top: 10px;
-		left: 50%;
-		transform: translateX(-50%);
-		width: max-content;
-		max-width: 100%;
-		background-color: rgba(0, 0, 0, 0.8);
-		border: red 2px solid;
-	}
-	.connection-status {
-		margin-top: 10px;
-		font-weight: bold;
-	}
-</style>
