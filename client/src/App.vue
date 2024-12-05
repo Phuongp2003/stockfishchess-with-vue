@@ -162,8 +162,8 @@
 				socket: null,
 				socketStatus: 'Disconnected',
 				boardAPI: null,
-				startupFen:
-					'r2qkb1r/ppp2ppp/2n2n2/3pp3/4P1B1/3P1P1N/PPP3PP/RNB1K2R b KQkq - 0 7',
+				startupFen: null
+					// 'r2qkb1r/ppp2ppp/2n2n2/3pp3/4P1B1/3P1P1N/PPP3PP/RNB1K2R b KQkq - 0 7',
 			};
 		},
 		setup() {
