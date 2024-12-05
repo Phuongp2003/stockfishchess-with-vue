@@ -18,7 +18,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "dotnet": "^1.1.4",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.4",
     "socket.io": "^4.8.1",
