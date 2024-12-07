@@ -83,16 +83,20 @@
 					}
 			},
 			async startGame() {
+				this.$refs.baseChessBoard.inTimePause = false;
+				this.$refs.baseChessBoard.end = false;
 				if (this.isetupPlayer === 'black') {
-					const response = await axios.post(
-						'http://localhost:3000/api/pve/move',
-						{
+					const response = await axios
+						.post('http://localhost:3000/api/pve/move', {
 							move: {
 								lan: '',
 								after: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
 							},
-						}
-					);
+						})
+						.catch((err) => {
+							this.$refs.baseChessBoard.inTimePause = true;
+							console.error(err);
+						});
 
 					// Handle the response from the server
 					const bestMove = response.data.bestMove;
@@ -104,8 +108,6 @@
 					}
 				}
 
-				this.$refs.baseChessBoard.inTimePause = false;
-				this.$refs.baseChessBoard.end = false;
 				this.$refs.baseChessBoard.message = '';
 			},
 		},

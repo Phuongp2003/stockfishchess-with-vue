@@ -1,4 +1,10 @@
 <style lang="scss" scoped>
+	.flex {
+		display: flex;
+	}
+	.flex-col {
+		flex-direction: column;
+	}
 	.chessboard-wrap {
 		width: fit-content;
 		min-width: 100%;
@@ -113,7 +119,6 @@
 			to="#game-field"
 			defer>
 			<div class="chessboard-wrap">
-				{{ iTrainingMode }}
 				<TheChessboard
 					ref="chessboard"
 					@stalemate="handleStalemate"
@@ -127,12 +132,16 @@
 					:player-color="iTrainingMode ? null : setupPlayer" />
 				<div
 					class="chessboard-overlay"
-					:style="`display: ${end ? 'block' : 'none'}`">
-					<div class="text">
+					:style="`display: ${
+						end || inTimePause ? 'block' : 'none'
+					}`">
+					<div class="text flex">
+						<div class="message">{{ message }}</div>
 						<button
+							class="button"
 							@click="startGame()"
 							v-if="!isFirstMoveDone && !end">
-							Start game
+							Bắt đầu trận đấu
 						</button>
 					</div>
 				</div>
@@ -205,7 +214,7 @@
 				boardAPI: null,
 				boardConfig: {},
 				end: false,
-				message: 'Wait for start',
+				message: 'Hãy chờ để bắt đầu trận đấu!',
 				fen:
 					this.startupFen ||
 					'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -233,12 +242,11 @@
 				},
 				autoCastle: true,
 				viewOnly: false,
-				disableContextMenu: false,
 				addPieceZIndex: true,
 				blockTouchScroll: true,
 				orientation: this.setupPlayer,
 				fen: this.fen,
-				coordinates: false,
+				coordinates: true,
 			};
 		},
 		methods: {

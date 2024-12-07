@@ -18,4 +18,4 @@ const Chess = {
 }
 
 export default Chess;
-export { ChessBoard, ChessBoardServerless, PVPChessboard, TrainBoard };
+export { ChessBoard, ChessBoardServerless, PVPChessboard, TrainBoard, GameControl };
